@@ -8,7 +8,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-easy-thumbnails-watermark',
-    version='0.6.2',
+    version='0.6.9',
     packages=['easy_thumbnails_watermark'],
     include_package_data=True,
     license='GPLv3 License',
@@ -17,7 +17,7 @@ setup(
     url='http://v.licheni.net/drc/django-easy-thumbnails-watermark.git',
     author='Davide Riccardo Caliendo',
     author_email='davide.licheni.net',
-    install_requires=['easy_thumbnails'],
+    install_requires=['easy_thumbnails'],   
     classifiers=[
         'Environment :: Web Environment',
         'Framework :: Django',
@@ -27,7 +27,9 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
 )
+

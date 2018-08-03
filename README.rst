@@ -75,7 +75,7 @@ And one of the following settings:
   any integer should work, but for your own sanity I recommend keeping the
   value between 0 and 359).  If you want the rotation to be random, use
   ``rotation=R`` instead of an integer.
-
+* ``noalpha`` defaults to False, removes any alpha introduced with the watermark effect, useful to force a jpg image to remain the same, saving a lot of space, setting to True effectively converts any RGBA color space to RGB.
 
 They defaults to  watermark=False, position='C', opacity=100, scale=1, tile=False, greyscale=False, rotation=0
 

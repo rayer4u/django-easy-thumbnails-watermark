@@ -1,4 +1,8 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, unicode_literals
+
 from django.conf import settings
+from django.contrib.staticfiles import finders
 try:
     from PIL import Image, ImageEnhance
 except ImportError:
@@ -15,20 +19,17 @@ import os
 import re
 import random
 
-
 def _percent(var):
     """
     Just a simple interface to the _val function with a more meaningful name.
     """
     return _val(var, True)
 
-
 def _int(var):
     """
     Just a simple interface to the _val function with a more meaningful name.
     """
     return _val(var)
-
 
 def _val(var, is_percent=False):
     """
@@ -47,24 +48,22 @@ def _val(var, is_percent=False):
         raise ValueError('invalid watermark parameter: ' + var)
     return var
 
-
 def reduce_opacity(img, opacity):
     """
     Returns an image with reduced opacity.
     """
-    if opacity >= 0 and opacity <= 1:
+    assert opacity >= 0 and opacity <= 1
 
-        if img.mode != 'RGBA':
-            img = img.convert('RGBA')
-        else:
-            img = img.copy()
+    if img.mode != 'RGBA':
+        img = img.convert('RGBA')
+    else:
+        img = img.copy()
 
-        alpha = img.split()[3]
-        alpha = ImageEnhance.Brightness(alpha).enhance(opacity)
-        img.putalpha(alpha)
+    alpha = img.split()[3]
+    alpha = ImageEnhance.Brightness(alpha).enhance(opacity)
+    img.putalpha(alpha)
 
     return img
-
 
 def determine_scale(scale, img, mark):
     """
@@ -84,15 +83,15 @@ def determine_scale(scale, img, mark):
             if scale.lower() == 'f':
                 # scale, but preserve the aspect ratio
                 scale = min(
-                    float(img.size[0]) / mark.size[0],
-                    float(img.size[1]) / mark.size[1]
-                )
+                            float(img.size[0]) / mark.size[0],
+                            float(img.size[1]) / mark.size[1]
+                           )
             elif re.match(r'\d{1,3}\%', scale):
-                scale = float(scale.replace('%', ''))
+                scale = float(scale.replace('%',''))
                 scale = min(
-                    float(img.size[0]) / mark.size[0],
-                    float(img.size[1]) / mark.size[1]
-                ) / 100 * scale
+                            float(img.size[0]) / mark.size[0],
+                            float(img.size[1]) / mark.size[1]
+                           ) / 100 * scale
 
             else:
                 raise ValueError(errmess)
@@ -108,7 +107,6 @@ def determine_scale(scale, img, mark):
     else:
         return mark.size
 
-
 def determine_rotation(rotation, mark):
     """
     Determines the number of degrees to rotate the watermark image.
@@ -120,7 +118,6 @@ def determine_rotation(rotation, mark):
         rotation = _int(rotation)
 
     return rotation
-
 
 def determine_position(position, img, mark):
     """
@@ -147,7 +144,7 @@ def determine_position(position, img, mark):
 
     if isinstance(position, tuple):
         left, top = position
-    elif isinstance(position, str) or isinstance(position, unicode):
+    elif isinstance(position, str):
         position = position.lower()
 
         # corner positioning
@@ -185,8 +182,7 @@ def determine_position(position, img, mark):
             else:
                 top = _int(top)
 
-    return (left, top)
-
+    return (int(left), int(top))
 
 def watermark_filter(img, mark, position, opacity, scale, tile, greyscale, rotation, **kwargs):
     """
@@ -198,7 +194,8 @@ def watermark_filter(img, mark, position, opacity, scale, tile, greyscale, rotat
     if type(scale) != tuple:
         scale = determine_scale(scale, img, mark)
 
-    mark = mark.resize(scale)
+    if scale[0] != mark.size[0] and scale[1] != mark.size[1]:
+        mark = mark.resize(scale)
 
     if greyscale and mark.mode != 'LA':
         mark = mark.convert('LA')
@@ -209,7 +206,7 @@ def watermark_filter(img, mark, position, opacity, scale, tile, greyscale, rotat
         new_w = mark.size[0] * 1.5
         new_h = mark.size[1] * 1.5
 
-        new_mark = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+        new_mark = Image.new('RGBA', (new_w, new_h), (0,0,0,0))
 
         # center the watermark in the newly resized image
         new_l = (new_w - mark.size[0]) / 2
@@ -228,7 +225,7 @@ def watermark_filter(img, mark, position, opacity, scale, tile, greyscale, rotat
 
     # create a transparent layer the size of the image and draw the
     # watermark in that layer.
-    layer = Image.new('RGBA', img.size, (0, 0, 0, 0))
+    layer = Image.new('RGBA', img.size, (0,0,0,0))
     if tile:
         first_y = position[1] % mark.size[1] - mark.size[1]
         first_x = position[0] % mark.size[0] - mark.size[0]
@@ -245,9 +242,13 @@ def watermark_filter(img, mark, position, opacity, scale, tile, greyscale, rotat
 
 def watermark_processor(image, WATERMARK=False, **kwargs):
     if WATERMARK:
-        mk = Image.open(os.path.join(settings.STATIC_ROOT, WATERMARK['image']))
+        if settings.DEBUG:
+            path = finders.find(WATERMARK['image'])
+        else:
+            path = os.path.join(settings.STATIC_ROOT, WATERMARK['image'])
+        mk = Image.open(path)
         image = watermark_filter(
-                    image, mk,
+                    image, mk, 
                     WATERMARK.get('position', 'BR'),
                     WATERMARK.get('opacity', 0.5),
                     WATERMARK.get('scale', 1),
@@ -255,4 +256,6 @@ def watermark_processor(image, WATERMARK=False, **kwargs):
                     WATERMARK.get('greyscale', False),
                     WATERMARK.get('rotation', 0)
         )
+        if WATERMARK.get('noalpha', False):
+            image = image.convert('RGB')
     return image
